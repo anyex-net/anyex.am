@@ -1,2 +1,2 @@
 # anyex.am
-exchange stock coin spot futures contract ctp
+asset stock coin spot futures contract ctp
