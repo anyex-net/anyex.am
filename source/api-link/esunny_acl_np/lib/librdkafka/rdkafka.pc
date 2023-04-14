@@ -1,0 +1,10 @@
+prefix=/usr
+libdir=/usr/lib64
+includedir=/usr/include
+
+Name: librdkafka
+Description: The Apache Kafka C/C++ library
+Version: 0.11.5
+Cflags: -I${includedir}
+Libs: -L${libdir} -lrdkafka
+Libs.private: -lsasl2   -lssl -lcrypto   -llz4   -lm -lcrypto   -lz   -ldl -lpthread -lrt

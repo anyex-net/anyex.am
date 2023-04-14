@@ -1,0 +1,56 @@
+#server type(mdServer tradeServer)
+server_type = tradeServer
+#server mode(singleAccount multiAccount)
+server_mode = multiAccount
+single_account = 183110
+
+#日志是否输出至控制台(true false)
+stdout_open = true
+
+#调试日志，格式：tag:level; tag:level, 如：all:1; 103:1
+#101:1 打印主进程日志
+#102:1 打印http传入参数值
+#103:2 打印异步返回数据
+server_debug = 103:2
+
+#订阅行情列表
+md_list = IF2108,au2108,c2109,CF109,sc2108
+stp_md_list = 00318289
+
+#redis config
+redis_addr = 127.0.0.1:6379
+redis_password = XpVFvpTuo4T0q8P8JQWnRdTz2EymvnU08WAWvwbw
+
+#kafka config
+kafka_broker = 192.168.31.46:9092
+#kafka enable(true false)
+kafka_enable = true
+
+#mysql config
+mysql_addr = 192.168.31.42:3306
+mysql_dbname = amnpfutures
+mysql_username = root
+mysql_password = Bcbc963852
+
+#stp_mysql config
+stp_mysql_addr = 192.168.31.42:3306
+stp_mysql_dbname = amnpspot
+stp_mysql_username = root
+stp_mysql_password = Bcbc963852
+
+#ctp default parmas
+#broker_id = 9999
+#invester_id = 183110
+#invester_password = asd*12345
+#auth_code = 0000000000000000
+#app_id = simnow_client_test
+
+#md params
+#front_md_address = tcp://218.202.237.33:10213
+# 7 * 24
+#front_md_address = tcp://180.168.146.187:10131
+
+#trade params
+#front_trade_address = tcp://218.202.237.33:10203
+# 7 * 24
+#front_trade_address = tcp://180.168.146.187:10130
