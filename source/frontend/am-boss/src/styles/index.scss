@@ -1,0 +1,92 @@
+@import './variables.scss';
+@import './mixin.scss';
+@import './transition.scss';
+@import './element-ui.scss';
+@import './sidebar.scss';
+
+body {
+  height: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+}
+
+label {
+  font-weight: 700;
+}
+
+html {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#app {
+  height: 100%;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+a:focus,
+a:active {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+div:focus {
+  outline: none;
+}
+
+.clearfix {
+  &:after {
+    visibility: hidden;
+    display: block;
+    font-size: 0;
+    content: " ";
+    clear: both;
+    height: 0;
+  }
+}
+
+// main-container global css
+.app-container {
+  padding: 20px;
+}
+.el-dialog__body {
+  padding: 20px;
+}
+.el-dialog__wrapper .el-divider--horizontal {
+  margin-top: 5px;
+}
+
+.el-table__empty-block {
+  display: none;
+}
+
+
+//VueQuillEditor
+.ql-editor {
+  font-family: Microsoft YaHei;
+  height: 500px!important;
+  font-size: 16px;
+  color: #000000;
+  letter-spacing: 0;
+  line-height: 30px;
+}
+.ql-snow .ql-picker {
+  height: 40px;
+}
+.ql-toolbar.ql-snow .ql-picker-label, .ql-snow .ql-picker-options .ql-picker-item {
+  outline: none;
+}

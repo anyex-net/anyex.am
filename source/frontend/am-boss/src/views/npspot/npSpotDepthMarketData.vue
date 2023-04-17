@@ -1,0 +1,522 @@
+<template>
+  <div class="app-container">
+    <el-form ref="searchForm" :model="searchForm" :inline="true" size="mini">
+      <el-form-item label="交易日">
+        <el-input v-model="searchForm.tradingDay" clearable placeholder="请输入交易日"></el-input>
+      </el-form-item>
+      <el-form-item label="证券代码">
+        <el-input v-model="searchForm.instrumentID" clearable placeholder="请输入证券代码"></el-input>
+      </el-form-item>
+      <el-form-item label="交易所代码">
+        <el-input v-model="searchForm.exchangeID" clearable placeholder="请输入交易所代码"></el-input>
+      </el-form-item>
+<!--      <el-form-item label="证券在交易所的代码">-->
+<!--        <el-input v-model="searchForm.exchangeInstID" clearable placeholder="请输入证券在交易所的代码"></el-input>-->
+<!--      </el-form-item>-->
+      <el-form-item label="最新价">
+        <el-input v-model="searchForm.lastPrice" clearable placeholder="请输入最新价"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" icon="el-icon-search" @click="doSearch()">查询</el-button>
+      </el-form-item>
+    </el-form>
+    <el-table
+      v-loading="npSpotDepthMarketDataLoading"
+      :data="npSpotDepthMarketDataData"
+      style="width:100%;margin-bottom:20px;"
+      border
+      row-key="id"
+    >
+      <el-table-column label="操作">
+        <template slot-scope="scope">
+          <el-button size="mini" type="success" @click="dialogEdit(scope.$index, scope.row)">查看</el-button>
+        </template>
+      </el-table-column>
+      <el-table-column prop="tradingDay" label="交易日" />
+      <el-table-column prop="instrumentID" label="证券代码" />
+      <el-table-column prop="exchangeID" label="交易所代码" />
+      <el-table-column prop="exchangeInstID" label="证券在交易所的代码" />
+      <el-table-column prop="lastPrice" label="最新价" />
+      <el-table-column prop="preSettlementPrice" label="上次结算价" />
+      <el-table-column prop="preClosePrice" label="昨收盘" />
+      <el-table-column prop="preOpenInterest" label="昨持仓量" />
+      <el-table-column prop="openPrice" label="今开盘价" />
+      <el-table-column prop="highestPrice" label="最高价" />
+      <el-table-column prop="lowestPrice" label="最低价" />
+      <el-table-column prop="volume" label="成交数量" />
+      <el-table-column prop="turnover" label="成交金额" />
+      <el-table-column prop="openInterest" label="持仓量" />
+      <el-table-column prop="closePrice" label="今收盘" />
+      <el-table-column prop="settlementPrice" label="本次结算价" />
+      <el-table-column prop="upperLimitPrice" label="涨停板价" />
+      <el-table-column prop="lowerLimitPrice" label="跌停板价" />
+      <el-table-column prop="preDelta" label="昨虚实度" />
+      <el-table-column prop="currDelta" label="今虚实度" />
+      <el-table-column prop="updateTime" label="最后修改时间" />
+      <el-table-column prop="updateMillisec" label="最后修改毫秒" />
+      <el-table-column prop="bidPrice1" label="申买价一" />
+      <el-table-column prop="bidVolume1" label="申买量一" />
+      <el-table-column prop="askPrice1" label="申卖价一" />
+      <el-table-column prop="askVolume1" label="申卖量一" />
+      <el-table-column prop="bidPrice2" label="申买价二" />
+      <el-table-column prop="bidVolume2" label="申买量二" />
+      <el-table-column prop="askPrice2" label="申卖价二" />
+      <el-table-column prop="askVolume2" label="申卖量二" />
+      <el-table-column prop="bidPrice3" label="申买价三" />
+      <el-table-column prop="bidVolume3" label="申买量三" />
+      <el-table-column prop="askPrice3" label="申卖价三" />
+      <el-table-column prop="askVolume3" label="申卖量三" />
+      <el-table-column prop="bidPrice4" label="申买价四" />
+      <el-table-column prop="bidVolume4" label="申买量四" />
+      <el-table-column prop="askPrice4" label="申卖价四" />
+      <el-table-column prop="askVolume4" label="申卖量四" />
+      <el-table-column prop="bidPrice5" label="申买价五" />
+      <el-table-column prop="bidVolume5" label="申买量五" />
+      <el-table-column prop="askPrice5" label="申卖价五" />
+      <el-table-column prop="askVolume5" label="申卖量五" />
+      <el-table-column prop="averagePrice" label="当日均价" />
+      <el-table-column prop="actionDay" label="业务日期" />
+      <el-table-column prop="changeReason" label="行情变动原因" />
+      <el-table-column prop="longUpdateTime" label="行情更新时间" :formatter="dateFormat"/>
+    </el-table>
+    <el-pagination
+      style="text-align:center;"
+      background
+      layout="total, sizes, prev, pager, next, jumper"
+      :hide-on-single-page="true"
+      :page-size="pageParams.rows"
+      :page-count="pageParams.totalPage"
+      :current-page="pageParams.page"
+      :total="pageParams.total"
+      :page-sizes="[5, 10, 20, 30, 40, 50, 100]"
+      @current-change="doSearch($event, 'page')"
+      @size-change="doSearch($event, 'size')"
+    />
+    <el-dialog
+      title="内盘现货深度行情表管理"
+      :visible.sync="npSpotDepthMarketDataDialog"
+      :close-on-click-modal="false"
+      width="600"
+    >
+      <el-form
+        ref="npSpotDepthMarketDataForm"
+        :model="npSpotDepthMarketDataForm"
+        label-width="150px"
+        class="npSpotDepthMarketDataForm"
+      >
+        <el-form-item label="交易日" prop="tradingDay">
+          <el-input v-model="npSpotDepthMarketDataForm.tradingDay" placeholder="请输入交易日" />
+        </el-form-item>
+        <el-form-item label="证券代码" prop="instrumentID">
+          <el-input v-model="npSpotDepthMarketDataForm.instrumentID" placeholder="请输入证券代码" />
+        </el-form-item>
+        <el-form-item label="交易所代码" prop="exchangeID">
+          <el-input v-model="npSpotDepthMarketDataForm.exchangeID" placeholder="请输入交易所代码" />
+        </el-form-item>
+        <el-form-item label="证券在交易所的代码" prop="exchangeInstID">
+          <el-input v-model="npSpotDepthMarketDataForm.exchangeInstID" placeholder="请输入证券在交易所的代码" />
+        </el-form-item>
+        <el-form-item label="最新价" prop="lastPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.lastPrice" placeholder="请输入最新价" />
+        </el-form-item>
+        <el-form-item label="上次结算价" prop="preSettlementPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.preSettlementPrice" placeholder="请输入上次结算价" />
+        </el-form-item>
+        <el-form-item label="昨收盘" prop="preClosePrice">
+          <el-input v-model="npSpotDepthMarketDataForm.preClosePrice" placeholder="请输入昨收盘" />
+        </el-form-item>
+        <el-form-item label="昨持仓量" prop="preOpenInterest">
+          <el-input v-model="npSpotDepthMarketDataForm.preOpenInterest" placeholder="请输入昨持仓量" />
+        </el-form-item>
+        <el-form-item label="今开盘价" prop="openPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.openPrice" placeholder="请输入今开盘价" />
+        </el-form-item>
+        <el-form-item label="最高价" prop="highestPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.highestPrice" placeholder="请输入最高价" />
+        </el-form-item>
+        <el-form-item label="最低价" prop="lowestPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.lowestPrice" placeholder="请输入最低价" />
+        </el-form-item>
+        <el-form-item label="成交数量" prop="volume">
+          <el-input v-model="npSpotDepthMarketDataForm.volume" placeholder="请输入成交数量" />
+        </el-form-item>
+        <el-form-item label="成交金额" prop="turnover">
+          <el-input v-model="npSpotDepthMarketDataForm.turnover" placeholder="请输入成交金额" />
+        </el-form-item>
+        <el-form-item label="持仓量" prop="openInterest">
+          <el-input v-model="npSpotDepthMarketDataForm.openInterest" placeholder="请输入持仓量" />
+        </el-form-item>
+        <el-form-item label="今收盘" prop="closePrice">
+          <el-input v-model="npSpotDepthMarketDataForm.closePrice" placeholder="请输入今收盘" />
+        </el-form-item>
+        <el-form-item label="本次结算价" prop="settlementPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.settlementPrice" placeholder="请输入本次结算价" />
+        </el-form-item>
+        <el-form-item label="涨停板价" prop="upperLimitPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.upperLimitPrice" placeholder="请输入涨停板价" />
+        </el-form-item>
+        <el-form-item label="跌停板价" prop="lowerLimitPrice">
+          <el-input v-model="npSpotDepthMarketDataForm.lowerLimitPrice" placeholder="请输入跌停板价" />
+        </el-form-item>
+        <el-form-item label="昨虚实度" prop="preDelta">
+          <el-input v-model="npSpotDepthMarketDataForm.preDelta" placeholder="请输入昨虚实度" />
+        </el-form-item>
+        <el-form-item label="今虚实度" prop="currDelta">
+          <el-input v-model="npSpotDepthMarketDataForm.currDelta" placeholder="请输入今虚实度" />
+        </el-form-item>
+        <el-form-item label="最后修改时间" prop="updateTime">
+          <el-input v-model="npSpotDepthMarketDataForm.updateTime" placeholder="请输入最后修改时间" />
+        </el-form-item>
+        <el-form-item label="最后修改毫秒" prop="updateMillisec">
+          <el-input v-model="npSpotDepthMarketDataForm.updateMillisec" placeholder="请输入最后修改毫秒" />
+        </el-form-item>
+        <el-form-item label="申买价一" prop="bidPrice1">
+          <el-input v-model="npSpotDepthMarketDataForm.bidPrice1" placeholder="请输入申买价一" />
+        </el-form-item>
+        <el-form-item label="申买量一" prop="bidVolume1">
+          <el-input v-model="npSpotDepthMarketDataForm.bidVolume1" placeholder="请输入申买量一" />
+        </el-form-item>
+        <el-form-item label="申卖价一" prop="askPrice1">
+          <el-input v-model="npSpotDepthMarketDataForm.askPrice1" placeholder="请输入申卖价一" />
+        </el-form-item>
+        <el-form-item label="申卖量一" prop="askVolume1">
+          <el-input v-model="npSpotDepthMarketDataForm.askVolume1" placeholder="请输入申卖量一" />
+        </el-form-item>
+        <el-form-item label="申买价二" prop="bidPrice2">
+          <el-input v-model="npSpotDepthMarketDataForm.bidPrice2" placeholder="请输入申买价二" />
+        </el-form-item>
+        <el-form-item label="申买量二" prop="bidVolume2">
+          <el-input v-model="npSpotDepthMarketDataForm.bidVolume2" placeholder="请输入申买量二" />
+        </el-form-item>
+        <el-form-item label="申卖价二" prop="askPrice2">
+          <el-input v-model="npSpotDepthMarketDataForm.askPrice2" placeholder="请输入申卖价二" />
+        </el-form-item>
+        <el-form-item label="申卖量二" prop="askVolume2">
+          <el-input v-model="npSpotDepthMarketDataForm.askVolume2" placeholder="请输入申卖量二" />
+        </el-form-item>
+        <el-form-item label="申买价三" prop="bidPrice3">
+          <el-input v-model="npSpotDepthMarketDataForm.bidPrice3" placeholder="请输入申买价三" />
+        </el-form-item>
+        <el-form-item label="申买量三" prop="bidVolume3">
+          <el-input v-model="npSpotDepthMarketDataForm.bidVolume3" placeholder="请输入申买量三" />
+        </el-form-item>
+        <el-form-item label="申卖价三" prop="askPrice3">
+          <el-input v-model="npSpotDepthMarketDataForm.askPrice3" placeholder="请输入申卖价三" />
+        </el-form-item>
+        <el-form-item label="申卖量三" prop="askVolume3">
+          <el-input v-model="npSpotDepthMarketDataForm.askVolume3" placeholder="请输入申卖量三" />
+        </el-form-item>
+        <el-form-item label="申买价四" prop="bidPrice4">
+          <el-input v-model="npSpotDepthMarketDataForm.bidPrice4" placeholder="请输入申买价四" />
+        </el-form-item>
+        <el-form-item label="申买量四" prop="bidVolume4">
+          <el-input v-model="npSpotDepthMarketDataForm.bidVolume4" placeholder="请输入申买量四" />
+        </el-form-item>
+        <el-form-item label="申卖价四" prop="askPrice4">
+          <el-input v-model="npSpotDepthMarketDataForm.askPrice4" placeholder="请输入申卖价四" />
+        </el-form-item>
+        <el-form-item label="申卖量四" prop="askVolume4">
+          <el-input v-model="npSpotDepthMarketDataForm.askVolume4" placeholder="请输入申卖量四" />
+        </el-form-item>
+        <el-form-item label="申买价五" prop="bidPrice5">
+          <el-input v-model="npSpotDepthMarketDataForm.bidPrice5" placeholder="请输入申买价五" />
+        </el-form-item>
+        <el-form-item label="申买量五" prop="bidVolume5">
+          <el-input v-model="npSpotDepthMarketDataForm.bidVolume5" placeholder="请输入申买量五" />
+        </el-form-item>
+        <el-form-item label="申卖价五" prop="askPrice5">
+          <el-input v-model="npSpotDepthMarketDataForm.askPrice5" placeholder="请输入申卖价五" />
+        </el-form-item>
+        <el-form-item label="申卖量五" prop="askVolume5">
+          <el-input v-model="npSpotDepthMarketDataForm.askVolume5" placeholder="请输入申卖量五" />
+        </el-form-item>
+        <el-form-item label="当日均价" prop="averagePrice">
+          <el-input v-model="npSpotDepthMarketDataForm.averagePrice" placeholder="请输入当日均价" />
+        </el-form-item>
+        <el-form-item label="业务日期" prop="actionDay">
+          <el-input v-model="npSpotDepthMarketDataForm.actionDay" placeholder="请输入业务日期" />
+        </el-form-item>
+        <el-form-item label="行情变动原因" prop="changeReason">
+          <el-input v-model="npSpotDepthMarketDataForm.changeReason" placeholder="请输入行情变动原因" />
+        </el-form-item>
+        <el-form-item label="行情更新时间" prop="longUpdateTime">
+          <el-input v-model="npSpotDepthMarketDataForm.longUpdateTime" placeholder="请输入行情更新时间" />
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'NpSpotDepthMarketData',
+  data() {
+    return {
+      npSpotDepthMarketDataLoading: true,
+      npSpotDepthMarketDataDialog: false,
+      npSpotDepthMarketDataData: [],
+      commodityTypeSelects: [],
+      dicts: [],
+      npSpotDepthMarketDataForm: {
+        'id': '',
+        'tradingDay': '',
+        'instrumentID': '',
+        'exchangeID': '',
+        'exchangeInstID': '',
+        'lastPrice': '',
+        'preSettlementPrice': '',
+        'preClosePrice': '',
+        'preOpenInterest': '',
+        'openPrice': '',
+        'highestPrice': '',
+        'lowestPrice': '',
+        'volume': '',
+        'turnover': '',
+        'openInterest': '',
+        'closePrice': '',
+        'settlementPrice': '',
+        'upperLimitPrice': '',
+        'lowerLimitPrice': '',
+        'preDelta': '',
+        'currDelta': '',
+        'updateTime': '',
+        'updateMillisec': '',
+        'bidPrice1': '',
+        'bidVolume1': '',
+        'askPrice1': '',
+        'askVolume1': '',
+        'bidPrice2': '',
+        'bidVolume2': '',
+        'askPrice2': '',
+        'askVolume2': '',
+        'bidPrice3': '',
+        'bidVolume3': '',
+        'askPrice3': '',
+        'askVolume3': '',
+        'bidPrice4': '',
+        'bidVolume4': '',
+        'askPrice4': '',
+        'askVolume4': '',
+        'bidPrice5': '',
+        'bidVolume5': '',
+        'askPrice5': '',
+        'askVolume5': '',
+        'averagePrice': '',
+        'actionDay': '',
+        'changeReason': '',
+        'longUpdateTime': ''
+      },
+      searchForm: {
+        'id': '',
+        'tradingDay': '',
+        'instrumentID': '',
+        'exchangeID': '',
+        'exchangeInstID': '',
+        'lastPrice': ''
+      },
+      pageParams: {
+        'rows': 10,
+        'page': 1,
+        'totalPage': 0,
+        'total': 0
+      }
+    };
+  },
+  mounted: function() {
+    // this.doInitData();
+    this.doSearch();
+  },
+  methods: {
+    dateFormat: function(row, column) {
+      const date = row[column.property];
+      if (date === undefined || date === '') {
+        return '';
+      }
+      return this.$moment(date).format('YYYY-MM-DD HH:mm:ss');
+    },
+    statusFormat: function(row, column) {
+      const date = row[column.property];
+      if (date === undefined || date === '') {
+        return '';
+      }
+      var p = column.property;
+      const obj = this.dicts[p].list;
+      const size = obj.length;
+      for (var i = 0; i < size; i++) {
+        if (obj[i].key === date) {
+          return obj[i].value;
+        }
+      }
+      return '';
+    },
+    doInitData() {
+      this.$http({
+        url: '/npspot/dict/npSpotDepthMarketData',
+        method: 'get'
+      }).then(res => {
+        if (res.code === 200) {
+          this.dicts = res.object;
+        }
+      }).catch(error => {
+        console.log(error);
+      });
+    },
+    doSearch: function(data, type) {
+      if (type === 'page') {
+        this.pageParams.page = data;
+      }
+      if (type === 'size') {
+        this.pageParams.rows = data;
+      }
+      this.npSpotDepthMarketDataLoading = true;
+      this.$http({
+        url: '/npspot/npSpotDepthMarketData/data',
+        method: 'post',
+        data: Object.assign(this.pageParams, this.searchForm)
+      }).then(res => {
+        if (res.code === 200) {
+          this.npSpotDepthMarketDataData = res.rows;
+          this.pageParams.totalPage = res.totalPage;
+          this.pageParams.total = res.total;
+          this.npSpotDepthMarketDataLoading = false;
+        } else {
+          this.$message.error(res);
+        }
+      }).catch(error => {
+        console.log(error);
+        this.$message.error(error);
+      });
+    },
+    dialogAdd: function() {
+      this.npSpotDepthMarketDataForm = {
+        'id': '',
+        'tradingDay': '',
+        'instrumentID': '',
+        'exchangeID': '',
+        'exchangeInstID': '',
+        'lastPrice': '',
+        'preSettlementPrice': '',
+        'preClosePrice': '',
+        'preOpenInterest': '',
+        'openPrice': '',
+        'highestPrice': '',
+        'lowestPrice': '',
+        'volume': '',
+        'turnover': '',
+        'openInterest': '',
+        'closePrice': '',
+        'settlementPrice': '',
+        'upperLimitPrice': '',
+        'lowerLimitPrice': '',
+        'preDelta': '',
+        'currDelta': '',
+        'updateTime': '',
+        'updateMillisec': '',
+        'bidPrice1': '',
+        'bidVolume1': '',
+        'askPrice1': '',
+        'askVolume1': '',
+        'bidPrice2': '',
+        'bidVolume2': '',
+        'askPrice2': '',
+        'askVolume2': '',
+        'bidPrice3': '',
+        'bidVolume3': '',
+        'askPrice3': '',
+        'askVolume3': '',
+        'bidPrice4': '',
+        'bidVolume4': '',
+        'askPrice4': '',
+        'askVolume4': '',
+        'bidPrice5': '',
+        'bidVolume5': '',
+        'askPrice5': '',
+        'askVolume5': '',
+        'averagePrice': '',
+        'actionDay': '',
+        'changeReason': '',
+        'longUpdateTime': ''
+      };
+      if (this.$refs.otcLegalConfigForm) {
+        this.$refs.otcLegalConfigForm.resetFields();
+      }
+      this.npSpotDepthMarketDataDialog = true;
+    },
+    dialogEdit: function(row, column) {
+      if (this.$refs.npSpotDepthMarketDataForm) {
+        this.$refs.npSpotDepthMarketDataForm.resetFields();
+      }
+      this.$http({
+        url: '/npspot/npSpotDepthMarketData/findBy',
+        method: 'get',
+        params: {
+          'id': column.id
+        }
+      }).then(res => {
+        if (res.code === 200) {
+          this.npSpotDepthMarketDataForm = {
+            'id': res.object.id,
+            'tradingDay': res.object.tradingDay,
+            'instrumentID': res.object.instrumentID,
+            'exchangeID': res.object.exchangeID,
+            'exchangeInstID': res.object.exchangeInstID,
+            'lastPrice': res.object.lastPrice,
+            'preSettlementPrice': res.object.preSettlementPrice,
+            'preClosePrice': res.object.preClosePrice,
+            'preOpenInterest': res.object.preOpenInterest,
+            'openPrice': res.object.openPrice,
+            'highestPrice': res.object.highestPrice,
+            'lowestPrice': res.object.lowestPrice,
+            'volume': res.object.volume,
+            'turnover': res.object.turnover,
+            'openInterest': res.object.openInterest,
+            'closePrice': res.object.closePrice,
+            'settlementPrice': res.object.settlementPrice,
+            'upperLimitPrice': res.object.upperLimitPrice,
+            'lowerLimitPrice': res.object.lowerLimitPrice,
+            'preDelta': res.object.preDelta,
+            'currDelta': res.object.currDelta,
+            'updateTime': res.object.updateTime,
+            'updateMillisec': res.object.updateMillisec,
+            'bidPrice1': res.object.bidPrice1,
+            'bidVolume1': res.object.bidVolume1,
+            'askPrice1': res.object.askPrice1,
+            'askVolume1': res.object.askVolume1,
+            'bidPrice2': res.object.bidPrice2,
+            'bidVolume2': res.object.bidVolume2,
+            'askPrice2': res.object.askPrice2,
+            'askVolume2': res.object.askVolume2,
+            'bidPrice3': res.object.bidPrice3,
+            'bidVolume3': res.object.bidVolume3,
+            'askPrice3': res.object.askPrice3,
+            'askVolume3': res.object.askVolume3,
+            'bidPrice4': res.object.bidPrice4,
+            'bidVolume4': res.object.bidVolume4,
+            'askPrice4': res.object.askPrice4,
+            'askVolume4': res.object.askVolume4,
+            'bidPrice5': res.object.bidPrice5,
+            'bidVolume5': res.object.bidVolume5,
+            'askPrice5': res.object.askPrice5,
+            'askVolume5': res.object.askVolume5,
+            'averagePrice': res.object.averagePrice,
+            'actionDay': res.object.actionDay,
+            'changeReason': res.object.changeReason,
+            'longUpdateTime': res.object.longUpdateTime
+          };
+        }
+      }).catch(error => {
+        this.$message.error(error);
+      });
+      this.npSpotDepthMarketDataDialog = true;
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+  .npSpotDepthMarketDataForm {
+    /deep/ .el-select {
+      width: 100%;
+    }
+  }
+</style>
